@@ -15,8 +15,8 @@ public class QueueDemo : MonoBehaviour
     public InputField Name;
     public TextMeshProUGUI Notice;
     public Text CountText;
-    public GameObject Enemy;
-    public GameObject Boss;
+    public GameObject EnemyPrefab;
+    public GameObject BossPrefab;
     private int _countEnemy = 0;
     private int _countBoss = 0;
     public RectTransform panelRectTransform;
@@ -41,38 +41,48 @@ public class QueueDemo : MonoBehaviour
         {
             return;
         }
-        if(Time.time > _lastSpamTime + Spamfrequency)
+
+        if (Time.time > _lastSpamTime + Spamfrequency)
         {
-            float randomX = Random.Range(_minX, _maxX);
-            float randomY = Random.Range(_minY, _maxY);
-            Vector3 spawnPosition = new Vector3(randomX, randomY, 1);
-            if (_queue.Count > 0)
+            if (_queue.TryDequeue(out string result))
             {
-                string currentTask = _queue.Dequeue();
-                if (_queue.TryDequeue(out string result))
+                float randomX = Random.Range(_minX, _maxX);
+                float randomY = Random.Range(_minY, _maxY);
+                Vector3 spawnPosition = new Vector3(randomX, randomY, 0);
+
+                GameObject prefabToSpawn = null;
+
+                if (result == "Boss")
                 {
-                    if (result == "Boss")
-                    {
-                        Instantiate(Enemy, spawnPosition, Quaternion.identity);
-                    }
-                    else {
-                        Instantiate(Boss, spawnPosition, Quaternion.identity);
-                    }
+                    prefabToSpawn = BossPrefab;
+                    Debug.Log("Spawning a Boss");
+                }
+                else
+                {
+                    prefabToSpawn = EnemyPrefab;
+                    Debug.Log("Spawning an Enemy");
+                }
+
+                if (prefabToSpawn != null)
+                {
+                    GameObject newObject = Instantiate(prefabToSpawn, spawnPosition, Quaternion.identity);
+                    newObject.transform.SetParent(panelRectTransform);
                 }
             }
             else
             {
+                Debug.Log("Hàng đợi trống, dừng spawn.");
                 PauseSpawn();
             }
+
             _lastSpamTime = Time.time;
         }
-
     }
 
     public void AddNPC(string Name)
     {
         _clearNotice();
-        if (Name == "Boss")
+        if (Name.ToLower() == "boss")
         {
             _queue.Enqueue("Boss");
             _setNotice(Color.green, "Đã thêm Boss vào hàng chờ");
